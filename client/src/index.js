@@ -1,66 +1,26 @@
-import streams from '../apis/streams';
-import history from './history';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 import {
-  SIGN_IN,
-  SIGN_OUT,
-  CREATE_STREAM,
-  FETCH_STREAMS,
-  FETCH_STREAM,
-  DELETE_STREAM,
-  EDIT_STREAM
-} from './types';
+  createStore,
+  applyMiddleware,
+  compose
+} from 'redux';
+import reduxThunk from 'redux-thunk';
 
-export const signIn = () => {
-  return {
-    type: SIGN_IN,
-    payload: 'default-user' // Using a default user ID
-  };
-};
+import App from './components/App';
+import reducers from './reducers';
 
-export const signOut = () => {
-  return {
-    type: SIGN_OUT
-  };
-};
+const composeEnhancers =
+  window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+const store = createStore(
+  reducers,
+  composeEnhancers(applyMiddleware(reduxThunk))
+);
 
-export const createStream = formValues => async (dispatch, getState) => {
-  const { userId } = getState().auth;
-  
-  // Ensure streamKey is included and not overridden
-  const streamData = {
-    ...formValues,
-    userId,
-    streamKey: formValues.streamKey // Explicitly include streamKey
-  };
-
-  const response = await streams.post('/streams', streamData);
-
-  dispatch({ type: CREATE_STREAM, payload: response.data });
-  history.push('/');
-};
-
-export const fetchStreams = () => async dispatch => {
-  const response = await streams.get('/streams');
-
-  dispatch({ type: FETCH_STREAMS, payload: response.data });
-};
-
-export const fetchStream = id => async dispatch => {
-  const response = await streams.get(`/streams/${id}`);
-
-  dispatch({ type: FETCH_STREAM, payload: response.data });
-};
-
-export const deleteStream = id => async dispatch => {
-  await streams.delete(`/streams/${id}`);
-
-  dispatch({ type: DELETE_STREAM, payload: id });
-  history.push('/');
-};
-
-export const editStream = (id, formValues) => async dispatch => {
-  const response = await streams.patch(`/streams/${id}`, formValues);
-
-  dispatch({ type: EDIT_STREAM, payload: response.data });
-  history.push('/');
-};
+ReactDOM.render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.querySelector('#root')
+);
